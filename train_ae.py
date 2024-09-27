@@ -1,6 +1,8 @@
 import argparse
 import os
 import io
+import sys
+print(sys.path)
 import yaml
 
 import torch

@@ -11,8 +11,15 @@ class Swish(nn.Module):
 
 
 class SharedDot(nn.Module):
-    def __init__(self, in_features, out_features, n_channels, bias=False,
-                 init_weight=None, init_bias=None):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        n_channels,
+        bias=False,
+        init_weight=None,
+        init_bias=None,
+    ):
         super(SharedDot, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -23,19 +30,19 @@ class SharedDot(nn.Module):
         if bias:
             self.bias = nn.Parameter(torch.Tensor(n_channels, out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
         self.reset_parameters()
 
     def reset_parameters(self):
         if self.init_weight:
             nn.init.uniform_(self.weight.data, a=-self.init_weight, b=self.init_weight)
         else:
-            nn.init.kaiming_uniform_(self.weight.data, a=0.)
+            nn.init.kaiming_uniform_(self.weight.data, a=0.0)
         if self.bias is not None:
             if self.init_bias:
                 nn.init.constant_(self.bias.data, self.init_bias)
             else:
-                nn.init.constant_(self.bias.data, 0.)
+                nn.init.constant_(self.bias.data, 0.0)
 
     def forward(self, input):
         output = torch.matmul(self.weight, input.unsqueeze(1))
