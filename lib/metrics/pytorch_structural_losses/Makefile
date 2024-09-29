@@ -5,9 +5,9 @@
 # Q ?= @
 
 CXX := g++
-PYTHON := python
+PYTHON := python3
 # NVCC := /scratch/horus/vsydorov/_stable/built/libs/cuda10.0.130/extract/bin/nvcc
-NVCC := /scratch/gpuhost7/rklokov/libs/cuda-10.2/bin/nvcc
+NVCC := /usr/local/cuda/bin/nvcc
 
 # PYTHON Header path
 PYTHON_HEADER_DIR := $(shell $(PYTHON) -c 'from distutils.sysconfig import get_python_inc; print(get_python_inc())')
@@ -72,8 +72,8 @@ NVCCFLAGS += -std=c++14 -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
 
 all: $(STATIC_LIB)
 	$(PYTHON) setup.py build
-	@ mv build/lib.linux-x86_64-3.6/StructuralLosses ..
-	@ mv build/lib.linux-x86_64-3.6/*.so ../StructuralLosses/
+	@ mv build/lib.linux-x86_64-cpython-38/StructuralLosses ..
+	@ mv build/lib.linux-x86_64-cpython-38/*.so ../StructuralLosses/
 	@- $(RM) -rf $(OBJ_DIR) build objs
 
 $(OBJ_DIR):
