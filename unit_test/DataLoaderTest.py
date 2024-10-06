@@ -16,7 +16,8 @@ class TestDataLoader(unittest.TestCase):
             "/rawdata3/ShapeNetCore.v2.PC15k", ModelName.airplane, True
         )
         all_path.sort()
-        self.assertEqual(all_path[0], "10155655850468db78d106ce0a280f87.npy")
+        print(all_path[0])
+        self.assertEqual(all_path[0], "/rawdata3/ShapeNetCore.v2.PC15k/02691156/train/10155655850468db78d106ce0a280f87.npy")
 
 
 if __name__ == "__main__":

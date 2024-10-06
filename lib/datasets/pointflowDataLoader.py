@@ -133,7 +133,7 @@ def get_all_path(root_dir, model_name, is_train):
     for file in os.listdir(path):
         if not file.endswith(".npy"):
             continue
-        all_path.append(file)
+        all_path.append(os.path.join(path, file))
     return all_path
 
 
@@ -152,7 +152,7 @@ class PointflowDataLoader(Dataset):
             try:
                 data = np.load(file)  # (15000,3)
             except Exception as e:
-                print(e)
+                print(e + 'file: ' + file)
                 continue
             self.all_points.append(data[np.newaxis, :])
         self.all_points = np.concatenate(self.all_points)  # (N, 15000, 3)
