@@ -158,12 +158,15 @@ class PointflowDataLoader(Dataset):
         self.all_points = np.concatenate(self.all_points)  # (N, 15000, 3)
 
         # Normalization
-        dim = self.all_points[2]
+        dim = self.all_points.shape[2]
         self.all_points_mean = (
             self.all_points.reshape(-1, dim).mean(axis=0).reshape(1, 1, dim)
         )
         self.all_points_std = self.all_points.reshape(-1).std(axis=0).reshape(1, 1, 1)
         self.all_points = (self.all_points - self.all_points_mean) / self.all_points_std
+
+    def __len__(self):
+        return len(self.all_points)
 
     def __getitem__(self, idx):
         target_points = self.all_points[idx]
@@ -171,3 +174,4 @@ class PointflowDataLoader(Dataset):
         cloud = target_points[::2].T
 
         return {"idx": idx, "cloud": cloud, "eval_cloud": eval_cloud}
+
