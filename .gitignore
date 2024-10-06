@@ -43,3 +43,6 @@ __pycache__/
 # Dont want nfs files
 .nfs*
 
+#c++ library
+lib/metrics/pytorch_structural_losses/build/*
+lib/metrics/pytorch_structural_losses/objs/*
