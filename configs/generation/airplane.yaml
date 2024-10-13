@@ -1,6 +1,6 @@
 ### Dataset configs ###
-path2data: /scratch/gpuhost7/rklokov/ShapeNet_Core/
-path2save: /scratch/gpuhost7/rklokov/ShapeNet_Core/
+path2data: ./data
+path2save: ./data
 meshes_fname: 'ShapeNetCore55v2_meshes_resampled.h5'
 cloud_size: 2048
 
