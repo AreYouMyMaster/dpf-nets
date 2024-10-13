@@ -1,13 +1,15 @@
 import os
 from time import time
 from sys import stdout
+import torch.nn as nn
 
 import torch
 
 from lib.networks.utils import AverageMeter, save_model
 
 
-def train(iterator, model, loss_func, optimizer, scheduler, epoch, iter, **kwargs):
+def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, iter, **kwargs):
+    print(f"epoch {epoch}")
     num_workers = kwargs.get("num_workers")
     train_mode = kwargs.get("train_mode")
     model_name = os.path.join(
@@ -27,6 +29,7 @@ def train(iterator, model, loss_func, optimizer, scheduler, epoch, iter, **kwarg
 
     end = time()
     for i, batch in enumerate(iterator):
+        print(f"batch {i}")
         if iter + i >= len(iterator):
             break
         data_time.update(time() - end)

@@ -6,7 +6,7 @@ cloud_size: 2048
 
 ### Dataset iterator configs ###
 chosen_label: 0
-batch_size: 64
+batch_size: 2 #default 64
 shuffle: true
 num_workers: 8
 
