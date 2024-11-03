@@ -13,7 +13,7 @@ def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, it
     num_workers = kwargs.get("num_workers")
     train_mode = kwargs.get("train_mode")
     model_name = os.path.join(
-        kwargs["path2save"], "models", "DPFNets", kwargs.get("model_name")
+        kwargs["path2save"], "models", "DPFNets", epoch, kwargs.get("model_name")
     )
 
     batch_time = AverageMeter()
@@ -79,17 +79,6 @@ def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, it
             stdout.flush()
 
         end = time()
-
-        if (iter + i + 1) % (100 * num_workers) == 0:
-            save_model(
-                {
-                    "epoch": epoch,
-                    "iter": iter + i + 1,
-                    "model_state": model.state_dict(),
-                    "optimizer_state": optimizer.state_dict(),
-                },
-                model_name,
-            )
 
     save_model(
         {
