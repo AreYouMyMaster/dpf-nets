@@ -152,7 +152,7 @@ class PointflowDataLoader(Dataset):
             try:
                 data = np.load(file)  # (15000,3)
             except Exception as e:
-                print(e + 'file: ' + file)
+                print(e + "file: " + file)
                 continue
             self.all_points.append(data[np.newaxis, :])
         self.all_points = np.concatenate(self.all_points)  # (N, 15000, 3)
@@ -164,14 +164,26 @@ class PointflowDataLoader(Dataset):
         )
         self.all_points_std = self.all_points.reshape(-1).std(axis=0).reshape(1, 1, 1)
         self.all_points = (self.all_points - self.all_points_mean) / self.all_points_std
+        self.train_points = self.all_points[:, :10000]
+        self.test_points = self.all_points[:, 10000:]
 
     def __len__(self):
-        return len(self.all_points)
+        return len(self.train_points)
 
     def __getitem__(self, idx):
-        target_points = self.all_points[idx]
+        target_points = self.train_points[idx]
         eval_cloud = target_points[1::2].copy().T
         cloud = target_points[::2].T
 
-        return {"idx": idx, "cloud": cloud, "eval_cloud": eval_cloud}
+        test_idx = idx % len(self.test_points)
+        test_points = self.test_points[test_idx]
+        test_points_even = test_points[::2].copy().T
+        test_points_odd = test_points[1::2].T
 
+        return {
+            "idx": idx,
+            "cloud": cloud,
+            "eval_cloud": eval_cloud,
+            "test_points_even": test_points_even,
+            "test_points_odd": test_points_odd,
+        }

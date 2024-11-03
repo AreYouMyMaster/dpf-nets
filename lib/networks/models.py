@@ -405,6 +405,92 @@ class Local_Cond_RNVP_MC_Global_RNVP_VAE(nn.Module):
 
         return output
 
+    def evaluate(self, g_input, p_input, n_sampled_points=None):
+        sampled_cloud_size = (
+            p_input.shape[2] if n_sampled_points is None else n_sampled_points
+        )
+        output = {}
+
+        p_enc_features = self.pc_encoder(g_input)
+        g_enc_features = torch.max(p_enc_features, dim=2)[0]
+
+        output["g_posterior_mus"], output["g_posterior_logvars"] = self.g_posterior(
+            g_enc_features
+        )
+        output["g_posterior_samples"] = output["g_posterior_mus"]
+
+        output["g_prior_mus"] = [
+            self.g0_prior_mus.expand(g_input.shape[0], self.g_latent_space_size)
+        ]
+        output["g_prior_logvars"] = [
+            self.g0_prior_logvars.expand(g_input.shape[0], self.g_latent_space_size)
+        ]
+        buf_g = self.g_prior(output["g_posterior_samples"], mode="inverse")
+        output["g_prior_samples"] = buf_g[0] + [output["g_posterior_samples"]]
+        output["g_prior_mus"] += buf_g[1]
+        output["g_prior_logvars"] += buf_g[2]
+
+        if self.p_decoder_base_type == "free":
+            output["p_prior_mus"], output["p_prior_logvars"] = self.p_prior(
+                output["g_posterior_samples"]
+            )
+            output["p_prior_mus"] = [
+                output["p_prior_mus"]
+                .unsqueeze(2)
+                .expand(
+                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
+                )
+            ]
+            output["p_prior_logvars"] = [
+                output["p_prior_logvars"]
+                .unsqueeze(2)
+                .expand(
+                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
+                )
+            ]
+
+        elif self.p_decoder_base_type == "freevar":
+            output["p_prior_mus"] = [
+                self.p_prior_mus.expand(
+                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
+                )
+            ]
+            output["p_prior_logvars"] = [
+                self.p_prior(output["g_posterior_samples"])
+                .unsqueeze(2)
+                .expand(
+                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
+                )
+            ]
+
+        elif self.p_decoder_base_type == "fixed":
+            output["p_prior_mus"] = [
+                self.p_prior_mus.expand(
+                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
+                )
+            ]
+            output["p_prior_logvars"] = [
+                self.p_prior_logvar.expand(
+                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
+                )
+            ]
+
+        output["p_prior_samples"] = [
+            self.reparameterize(
+                output["p_prior_mus"][0], output["p_prior_logvars"][0]
+            )
+        ]
+        buf = self.pc_decoder(
+            output["p_prior_samples"][0],
+            output["g_posterior_samples"],
+            mode="direct",
+        )
+        output["p_prior_samples"] += buf[0]
+        output["p_prior_mus"] += buf[1]
+        output["p_prior_logvars"] += buf[2]
+        return output
+
+
 
 class Local_Cond_RNVP_MC_Global_RNVP_VAE_IC(nn.Module):
     def __init__(self, **kwargs):

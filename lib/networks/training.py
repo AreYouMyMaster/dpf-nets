@@ -2,18 +2,23 @@ import os
 from time import time
 from sys import stdout
 import torch.nn as nn
+import numpy as np
 
 import torch
 
 from lib.networks.utils import AverageMeter, save_model
+from lib.metrics.evaluation_metrics import jsd_between_point_cloud_sets
 
+def point_clouds(samples, mus, logvars):
+    vars = torch.exp(logvars[0])
+    return torch.pow(2.0 * np.pi * vars[0], -0.5) * torch.exp(-(samples[0] - mus[0])**2 / 2 * vars[0])
 
 def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, iter, **kwargs):
     print(f"epoch {epoch}")
     num_workers = kwargs.get("num_workers")
     train_mode = kwargs.get("train_mode")
     model_name = os.path.join(
-        kwargs["path2save"], "models", "DPFNets", epoch, kwargs.get("model_name")
+        kwargs["path2save"], "models", "DPFNets", kwargs.get("model_name")
     )
 
     batch_time = AverageMeter()
@@ -29,7 +34,7 @@ def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, it
 
     end = time()
     for i, batch in enumerate(iterator):
-        print(f"batch {i}")
+        print(f"i = {i}, iter = {iter}")
         if iter + i >= len(iterator):
             break
         data_time.update(time() - end)
@@ -38,11 +43,22 @@ def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, it
         g_clouds = batch["cloud"].cuda(non_blocking=True)
         p_clouds = batch["eval_cloud"].cuda(non_blocking=True)
 
+        model.mode = 'training'
         if train_mode == "p_rnvp_mc_g_rnvp_vae":
             outputs = model(g_clouds, p_clouds)
         elif train_mode == "p_rnvp_mc_g_rnvp_vae_ic":
             images = batch["image"].cuda(non_blocking=True)
             outputs = model(g_clouds, p_clouds, images)
+
+        samples = outputs['p_prior_samples']
+        print(f'hellooooooooo')
+        print(f' samples = {type(samples)}')
+        print(f' samples len = {len(samples)}')
+        print(f' samples[0] = {type(samples[0])}')
+        print(f' samples[0] = {samples[0].shape}')
+        print(f' samples[1] = {type(samples[1])}')
+        print(f' samples[2] = {samples[1].shape}')
+        print(f'hellooooooooo')
 
         loss, pnll, gnll, gent = loss_func(g_clouds, p_clouds, outputs)
 
@@ -78,6 +94,28 @@ def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, it
             stdout.write(line)
             stdout.flush()
 
+        if i % 100 == 0:
+            print(f'    start evaluation: i = {i}')
+            test_g_clouds = batch["test_points_even"].cuda(non_blocking=True)
+            test_p_clouds = batch["test_points_odd"].cuda(non_blocking=True)
+            print(f' test_g_clouds = {type(test_g_clouds)}')
+
+            model.mode = 'evaluating'
+            evaluate_result = model(test_g_clouds, test_p_clouds)
+            samples = evaluate_result['p_prior_samples']
+            mus = evaluate_result['p_prior_mus'] 
+            logvars = evaluate_result['p_prior_logvars']
+            print(f' samples = {type(samples)}')
+            print(f' samples[0] = {type(samples[0])}')
+            print(f' samples[0] = {samples[0].shape}')
+
+            print(f'    sample size = {samples.shape}, mus size = {mus.shape}, logvar size = {logvars.shape}')
+
+            calculate_p = point_clouds(samples, mus, logvars)
+            jsd = jsd_between_point_cloud_sets(calculate_p, test_g_clouds)
+            print(f'    done jsd: {jsd}')
+
+
         end = time()
 
     save_model(
@@ -89,3 +127,4 @@ def train(iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, it
         },
         model_name,
     )
+
