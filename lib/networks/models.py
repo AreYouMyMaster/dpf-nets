@@ -437,16 +437,12 @@ class Local_Cond_RNVP_MC_Global_RNVP_VAE(nn.Module):
             output["p_prior_mus"] = [
                 output["p_prior_mus"]
                 .unsqueeze(2)
-                .expand(
-                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
-                )
+                .expand(p_input.shape[0], self.p_latent_space_size, sampled_cloud_size)
             ]
             output["p_prior_logvars"] = [
                 output["p_prior_logvars"]
                 .unsqueeze(2)
-                .expand(
-                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
-                )
+                .expand(p_input.shape[0], self.p_latent_space_size, sampled_cloud_size)
             ]
 
         elif self.p_decoder_base_type == "freevar":
@@ -458,9 +454,7 @@ class Local_Cond_RNVP_MC_Global_RNVP_VAE(nn.Module):
             output["p_prior_logvars"] = [
                 self.p_prior(output["g_posterior_samples"])
                 .unsqueeze(2)
-                .expand(
-                    p_input.shape[0], self.p_latent_space_size, sampled_cloud_size
-                )
+                .expand(p_input.shape[0], self.p_latent_space_size, sampled_cloud_size)
             ]
 
         elif self.p_decoder_base_type == "fixed":
@@ -476,9 +470,7 @@ class Local_Cond_RNVP_MC_Global_RNVP_VAE(nn.Module):
             ]
 
         output["p_prior_samples"] = [
-            self.reparameterize(
-                output["p_prior_mus"][0], output["p_prior_logvars"][0]
-            )
+            self.reparameterize(output["p_prior_mus"][0], output["p_prior_logvars"][0])
         ]
         buf = self.pc_decoder(
             output["p_prior_samples"][0],
@@ -489,7 +481,6 @@ class Local_Cond_RNVP_MC_Global_RNVP_VAE(nn.Module):
         output["p_prior_mus"] += buf[1]
         output["p_prior_logvars"] += buf[2]
         return output
-
 
 
 class Local_Cond_RNVP_MC_Global_RNVP_VAE_IC(nn.Module):
