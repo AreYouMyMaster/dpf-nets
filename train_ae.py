@@ -54,6 +54,7 @@ train_dataset = PointflowDataLoader(
     "/rawdata3/ShapeNetCore.v2.PC15k", ModelName.airplane, True
 )
 print("Dataset init: done.")
+print(f'Batch size = {config["batch_size"]}')
 
 train_iterator = DataLoader(
     train_dataset,

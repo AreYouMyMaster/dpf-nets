@@ -244,6 +244,7 @@ class Local_Cond_RNVP_MC_Global_RNVP_VAE(nn.Module):
             buf_p = self.pc_decoder(
                 p_input, output["g_posterior_samples"], mode="inverse"
             )
+
             output["p_prior_samples"] = buf_p[0] + [p_input]
             output["p_prior_mus"] += buf_p[1]
             output["p_prior_logvars"] += buf_p[2]

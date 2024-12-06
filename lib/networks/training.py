@@ -15,7 +15,11 @@ def point_clouds(samples, mus, logvars):
     return torch.pow(2.0 * np.pi * vars[0], -0.5) * torch.exp(
         -((samples[0] - mus[0]) ** 2) / 2 * vars[0]
     )
-
+def transform_to_numpy(t):
+    size_0 = t.size(dim = 0)
+    size_1 = t.size(dim = 1)
+    size_2 = t.size(dim = 2)
+    return t.view(size_0, size_2, size_1).cpu().detach().numpy()
 
 def train(
     iterator, model: nn.Module, loss_func, optimizer, scheduler, epoch, iter, **kwargs
@@ -40,7 +44,6 @@ def train(
 
     end = time()
     for i, batch in enumerate(iterator):
-        print(f"i = {i}, iter = {iter}")
         if iter + i >= len(iterator):
             break
         data_time.update(time() - end)
@@ -57,14 +60,6 @@ def train(
             outputs = model(g_clouds, p_clouds, images)
 
         samples = outputs["p_prior_samples"]
-        print(f"hellooooooooo")
-        print(f" samples = {type(samples)}")
-        print(f" samples len = {len(samples)}")
-        print(f" samples[0] = {type(samples[0])}")
-        print(f" samples[0] = {samples[0].shape}")
-        print(f" samples[1] = {type(samples[1])}")
-        print(f" samples[2] = {samples[1].shape}")
-        print(f"hellooooooooo")
 
         loss, pnll, gnll, gent = loss_func(g_clouds, p_clouds, outputs)
 
@@ -101,27 +96,22 @@ def train(
             stdout.flush()
 
         if i % 100 == 0:
-            print(f"    start evaluation: i = {i}")
             test_g_clouds = batch["test_points_even"].cuda(non_blocking=True)
             test_p_clouds = batch["test_points_odd"].cuda(non_blocking=True)
-            print(f" test_g_clouds = {type(test_g_clouds)}")
 
             model.mode = "evaluating"
             evaluate_result = model(test_g_clouds, test_p_clouds)
             samples = evaluate_result["p_prior_samples"]
             mus = evaluate_result["p_prior_mus"]
             logvars = evaluate_result["p_prior_logvars"]
-            print(f" samples = {type(samples)}")
-            print(f" samples[0] = {type(samples[0])}")
-            print(f" samples[0] = {samples[0].shape}")
-
-            print(
-                f"    sample size = {samples.shape}, mus size = {mus.shape}, logvar size = {logvars.shape}"
-            )
 
             calculate_p = point_clouds(samples, mus, logvars)
-            jsd = jsd_between_point_cloud_sets(calculate_p, test_g_clouds)
-            print(f"    done jsd: {jsd}")
+
+            reshape_samples = transform_to_numpy(calculate_p)
+            reshape_tests = transform_to_numpy(test_g_clouds)
+
+            jsd = jsd_between_point_cloud_sets(reshape_samples, reshape_tests)
+            print(f"{i}:   jsd = {jsd}")
 
         end = time()
 
@@ -134,3 +124,4 @@ def train(
         },
         model_name,
     )
+
