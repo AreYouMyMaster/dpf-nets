@@ -3,11 +3,12 @@ from time import time
 from sys import stdout
 import torch.nn as nn
 import numpy as np
-
 import torch
-
 from lib.networks.utils import AverageMeter, save_model
 from lib.metrics.evaluation_metrics import jsd_between_point_cloud_sets
+import numpy as np
+#from remote_plot import plt
+import matplotlib.pyplot as plt
 
 
 def point_clouds(samples, mus, logvars):
@@ -43,6 +44,7 @@ def train(
     torch.set_grad_enabled(True)
 
     end = time()
+    loss_values = []
     for i, batch in enumerate(iterator):
         if iter + i >= len(iterator):
             break
@@ -76,6 +78,8 @@ def train(
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        loss_values.append(loss.item())
 
         batch_time.update(time() - end)
         if (iter + i + 1) % (num_workers) == 0:
@@ -112,6 +116,32 @@ def train(
 
             jsd = jsd_between_point_cloud_sets(reshape_samples, reshape_tests)
             print(f"{i}:   jsd = {jsd}")
+            print(f"calculate_p size = {calculate_p.size()}")
+
+            fig = plt.figure()
+            plt.subplot(221)
+            plt.plot(np.array(loss_values), 'r')
+
+            # calculate p
+            ax =fig.add_subplot(222, projection='3d')
+            points = reshape_samples[0].reshape(3, -1).T
+            x = points[:,0]
+            y = points[:,1]
+            z = points[:,2]
+            ax.scatter(x,y,z, marker= '.')
+
+            t_ax =fig.add_subplot(223, projection='3d')
+            test_points = reshape_tests[0].reshape(3, -1).T
+            t_x = test_points[:,0]
+            t_y = test_points[:,1]
+            t_z = test_points[:,2]
+            t_ax.scatter(t_x,t_y,t_z, marker= '.')
+
+
+            plt.show()
+            plt.savefig('loss.png')
+
+            
 
         end = time()
 
